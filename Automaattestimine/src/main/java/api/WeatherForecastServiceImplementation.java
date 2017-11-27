@@ -27,8 +27,9 @@ public class WeatherForecastServiceImplementation implements WeatherForecastServ
 		try {
             return JsonDataReader.readJsonFromUrl(url);
         } catch (Exception e) {
-            return new JSONObject();
+        	return new JSONObject();
         }
+
 	}
 	
 }

@@ -2,50 +2,81 @@ package tests;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import api.CityInput;
+import api.CityOutput;
+import api.JsonDataReader;
 import api.WeatherForecastService;
 import api.WeatherForecastServiceImplementation;
 
 public class WeatherForecastTests {
 	
-	private static final String CITY_NAME = "Tallinn";		
+	private static String cityName = "";
+	
+	@BeforeClass
+	public static void setUpCityName() throws IOException {
+		CityInput ci = new CityInput();
+		String city = ci.getCityName();
+		cityName = city;
+	}
+	
+	@AfterClass
+	public static void write() throws IOException {
+    	CityOutput output = new CityOutput();
+    	DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+    	Date date = new Date();
+    	//System.out.println(dateFormat.format(date));
+    	output.writeOutputToFile(dateFormat.format(date) + "\r\n" + JsonDataReader.getTextFromUrl1() + "\r\n" + "-------------" + "\r\n");
+    	output.writeOutputToFile(dateFormat.format(date) + "\r\n" + JsonDataReader.getTextFromUrl2() + "\r\n" + "-------------" + "\r\n");
+    }
+		
+	@Test
+    public void isCityReplyCorrect() throws JSONException, IOException {
+        WeatherForecastService wfs = new WeatherForecastServiceImplementation();
+        JSONObject reply = wfs.getWeatherForecast(cityName);
+        assertEquals(cityName, (String) reply.get("name"));
+    }
 	
 	@Test
-    public void isReplyValid() throws JSONException {
+    public void isReplyValid() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
-        JSONObject reply = wfs.getWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getWeatherForecast(cityName);
         assertTrue(reply.get("cod").toString().equals("200"));
     }
 	
 	@Test
-    public void isCityReplyCorrect() throws JSONException {
-        WeatherForecastService wfs = new WeatherForecastServiceImplementation();
-        JSONObject reply = wfs.getWeatherForecast(CITY_NAME);
-        assertEquals(CITY_NAME, (String) reply.get("name"));
-    }
-	
-	@Test
-    public void isCurrentTemperatureReal() throws JSONException {
+    public void isCurrentTemperatureReal() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
-        JSONObject reply = wfs.getWeatherForecast(CITY_NAME);
-        Integer currentTemperature = (Integer) ((JSONObject) reply.get("main")).get("temp");
-        assertTrue(currentTemperature > -90 && currentTemperature < 60);
+        JSONObject reply = wfs.getWeatherForecast(cityName);
+        if(((JSONObject) reply.get("main")).get("temp") instanceof Integer) {
+        	double currentTemperature = (double) ((Integer)((JSONObject) reply.get("main")).get("temp")).intValue();
+        	assertTrue(currentTemperature > -90 && currentTemperature < 60);
+        }else {
+        	Double currentTemperature = (Double)((JSONObject) reply.get("main")).get("temp");
+        	assertTrue(currentTemperature > -90 && currentTemperature < 60);
+        }       
     }
 	
 	//fixed
 	@Test
-    public void areAllThreeDayWeatherForecastTemperaturesReal() throws JSONException {
+    public void areAllThreeDayWeatherForecastTemperaturesReal() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
         boolean complexBoolean =  true;
-        JSONObject reply = wfs.getThreeDayWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getThreeDayWeatherForecast(cityName);
         JSONArray nextFiveDays = (JSONArray) reply.get("list");
         //System.out.println(nextFiveDays.length());
         for (int i = 0; i < nextFiveDays.length(); ++i) {
@@ -70,18 +101,18 @@ public class WeatherForecastTests {
     }
 	
 	@Test
-    public void isCoordinateFormatSuitable() throws JSONException {
+    public void isCoordinateFormatSuitable() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
-		JSONObject reply = wfs.getWeatherForecast(CITY_NAME);        
+		JSONObject reply = wfs.getWeatherForecast(cityName);        
         assertTrue(((JSONObject) reply.get("coord")).get("lon") instanceof Double && ((JSONObject) reply.get("coord")).get("lat") instanceof Double);
     }
 	
 	@Test
-    public void isWeatherForecastTemperatureGivenPerEveryThreeHours() throws JSONException {
+    public void isWeatherForecastTemperatureGivenPerEveryThreeHours() throws JSONException, IOException {
         WeatherForecastService wfs = new WeatherForecastServiceImplementation();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         boolean complexBoolean = true;
-        JSONObject reply = wfs.getThreeDayWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getThreeDayWeatherForecast(cityName);
         JSONArray nextFiveDays = (JSONArray) reply.get("list");
         String previousTime = "";
         String currentTime = "";
@@ -108,10 +139,10 @@ public class WeatherForecastTests {
     }
 	
 	@Test
-    public void isEveryDayForecastHasMinMaxTemp() throws JSONException {
+    public void isEveryDayForecastHasMinMaxTemp() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
         boolean complexBoolean = true;
-        JSONObject reply = wfs.getThreeDayWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getThreeDayWeatherForecast(cityName);
         JSONArray nextFiveDays = (JSONArray) reply.get("list");
         for (int i = 0; i < nextFiveDays.length(); ++i) {
             JSONObject info = nextFiveDays.getJSONObject(i);
@@ -126,10 +157,10 @@ public class WeatherForecastTests {
     }
 	
 	@Test
-    public void areAllMinMaxTemperaturesCorrect() throws JSONException {
+    public void areAllMinMaxTemperaturesCorrect() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
         boolean complexBoolean = true;
-        JSONObject reply = wfs.getThreeDayWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getThreeDayWeatherForecast(cityName);
         JSONArray nextFiveDays = (JSONArray) reply.get("list");
         for (int i = 0; i < nextFiveDays.length(); ++i) {
             JSONObject info = nextFiveDays.getJSONObject(i);
@@ -177,10 +208,10 @@ public class WeatherForecastTests {
     }
 	
 	@Test
-    public void areAllMinTemperaturesLessThanMaxTemperatures() throws JSONException {
+    public void areAllMinTemperaturesLessThanMaxTemperatures() throws JSONException, IOException {
 		WeatherForecastService wfs = new WeatherForecastServiceImplementation();
         boolean complexBoolean = true;
-        JSONObject reply = wfs.getThreeDayWeatherForecast(CITY_NAME);
+        JSONObject reply = wfs.getThreeDayWeatherForecast(cityName);
         JSONArray nextFiveDays = (JSONArray) reply.get("list");
         for (int i = 0; i < nextFiveDays.length(); ++i) {
             JSONObject info = nextFiveDays.getJSONObject(i);

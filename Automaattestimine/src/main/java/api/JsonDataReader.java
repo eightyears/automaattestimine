@@ -15,6 +15,10 @@ import org.json.JSONObject;
 //Source>-- https://stackoverflow.com/questions/4308554/simplest-way-to-read-json-from-a-url-in-java
 
 public class JsonDataReader {
+	
+	private static String textFromUrl1 = "";
+	private static String textFromUrl2 = "";
+	
 	private static String readAll(Reader rd) throws IOException {
 	    StringBuilder sb = new StringBuilder();
 	    int cp;
@@ -29,10 +33,23 @@ public class JsonDataReader {
 	    try {
 	      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
 	      String jsonText = readAll(rd);
+	      if(url.contains("/weather")) {
+	    	  textFromUrl1 = jsonText;
+	      }else if(url.contains("/forecast")) {
+	    	  textFromUrl2 = jsonText;
+	      }	      
 	      JSONObject json = new JSONObject(jsonText);
 	      return json;
 	    } finally {
 	      is.close();
 	    }
 	  }
+
+	public static String getTextFromUrl1() {
+		return textFromUrl1;
+	}
+
+	public static String getTextFromUrl2() {
+		return textFromUrl2;
+	}
 }
